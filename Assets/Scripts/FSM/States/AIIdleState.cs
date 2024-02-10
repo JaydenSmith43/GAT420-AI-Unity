@@ -4,16 +4,26 @@ using UnityEngine;
 
 public class AIIdleState : AIState
 {
-	
+	ValueRef<int> stateChance = new ValueRef<int>();
 
 	public AIIdleState(AIStateAgent agent) : base(agent)
 	{
 		AIStateTransition transition = new AIStateTransition(nameof(AIPatrolState));
 		transition.AddCondition(new FloatCondition(agent.timer, Condition.Predicate.LESS, 0));
+		transition.AddCondition(new IntCondition(stateChance, Condition.Predicate.EQUAL, 0));
+		transitions.Add(transition);
+
+		transition = new AIStateTransition(nameof(AIDanceState));
+		transition.AddCondition(new FloatCondition(agent.timer, Condition.Predicate.LESS, 0));
+		transition.AddCondition(new IntCondition(stateChance, Condition.Predicate.EQUAL, 1));
 		transitions.Add(transition);
 
 		transition = new AIStateTransition(nameof(AIChaseState));
 		transition.AddCondition(new BoolCondition(agent.enemySeen));
+		transitions.Add(transition);
+
+		transition = new AIStateTransition(nameof(AIWaveState));
+		transition.AddCondition(new BoolCondition(agent.friendSeen, true));
 		transitions.Add(transition);
 
 		//var condition = new FloatCondition(agent.timer, Condition.Predicate.LESS, 0);
@@ -26,6 +36,7 @@ public class AIIdleState : AIState
 		agent.movement.Velocity = Vector3.zero;
 
 		agent.timer.value = Random.Range(1, 2);
+		stateChance.value = Random.Range(0, 2);
 	}
 
 	public override void OnUpdate()

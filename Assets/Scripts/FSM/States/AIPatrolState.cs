@@ -15,6 +15,10 @@ public class AIPatrolState : AIState
 		transition = new AIStateTransition(nameof(AIChaseState));
 		transition.AddCondition(new BoolCondition(agent.enemySeen));
 		transitions.Add(transition);
+
+		transition = new AIStateTransition(nameof(AIWaveState));
+		transition.AddCondition(new BoolCondition(agent.friendSeen));
+		transitions.Add(transition);
 	}
 
 	public override void OnEnter()

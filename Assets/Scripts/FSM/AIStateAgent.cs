@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,6 +7,7 @@ public class AIStateAgent : AIAgent
 {
 	public Animator animator;
 	public AIPerception enemyPerception;
+	public AIPerception friendPerception;
 
 	// parameters
 	public ValueRef<float> health = new ValueRef<float>(); // -> memory, created in memory
@@ -13,11 +15,17 @@ public class AIStateAgent : AIAgent
 	public ValueRef<float> destinationDistance = new ValueRef<float>();
 
 	public ValueRef<bool> enemySeen = new ValueRef<bool>();
+	public ValueRef<bool> friendSeen = new ValueRef<bool>();
+	public ValueRef<bool> wavingBack = new ValueRef<bool>();
 	public ValueRef<float> enemyDistance = new ValueRef<float>();
 	public ValueRef<float> enemyHealth = new ValueRef<float>();
 
-    public AIStateMachine stateMachine = new AIStateMachine();
+	public AIStateMachine stateMachine = new AIStateMachine();
 	public AIStateAgent enemy { get; private set; }
+	public AIStateAgent friend { get; private set; }
+
+	public ValueRef<bool> isWaving = new ValueRef<bool>();
+	public ValueRef<bool> isHappy = new ValueRef<bool>();
 
 	private void Start()
 	{
@@ -27,6 +35,9 @@ public class AIStateAgent : AIAgent
 		stateMachine.AddState(nameof(AIPatrolState), new AIPatrolState(this));
 		stateMachine.AddState(nameof(AIAttackState), new AIAttackState(this));
 		stateMachine.AddState(nameof(AIChaseState), new AIChaseState(this));
+		stateMachine.AddState(nameof(AIDanceState), new AIDanceState(this));
+		stateMachine.AddState(nameof(AIWaveState), new AIWaveState(this));
+		stateMachine.AddState(nameof(AISadState), new AISadState(this));
 
 		stateMachine.SetState(nameof(AIIdleState));
 	}
@@ -44,6 +55,28 @@ public class AIStateAgent : AIAgent
 			enemyDistance.value = Vector3.Distance(transform.position, enemy.transform.position);
 			enemyHealth.value = enemy.health;
 		}
+
+		var friends = friendPerception.GetGameObjects();
+		friendSeen.value = (friends.Length > 0);
+
+		if (friendSeen)
+		{
+			foreach (var friendThing in friends)
+			{
+				friend = friendThing.TryGetComponent(out AIStateAgent stateAgent) ? stateAgent : null;
+				if (friend.isWaving == true)
+				{
+					isHappy.value = true;
+					Debug.Log("I AM HAPPY!!!");
+				}
+				else
+				{
+					isHappy.value = false;
+				}
+			}
+			
+		}
+
 
 		// from any state (health -> death)
 		if (health <= 0) stateMachine.SetState(nameof(AIDeathState));
@@ -96,7 +129,7 @@ public class AIStateAgent : AIAgent
 			// check if collider object is a state agent, reduce health
 			if (collider.gameObject.TryGetComponent<AIStateAgent>(out var stateAgent))
 			{
-				stateAgent.ApplyDamage(Random.Range(20, 50));
+				stateAgent.ApplyDamage(UnityEngine.Random.Range(20, 50));
 			}
 		}
 	}
